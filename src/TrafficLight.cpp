@@ -19,6 +19,13 @@ void MessageQueue<T>::send(T &&msg)
 {
     // FP.4a : The method send should use the mechanisms std::lock_guard<std::mutex> 
     // as well as _condition.notify_one() to add a new message to the queue and afterwards send a notification.
+  
+    // perform vector modification under the lock
+    std::lock_guard<std::mutex> uLock(_mutex);
+  
+  	std::cout << "   Message " << msg << " has been sent to the queue" << std::endl;
+  	_queue.push_back(std::move(msg));
+  	_cond.notify_one(); 	
 }
 
 
@@ -29,10 +36,11 @@ TrafficLight::TrafficLight()
 {
     _currentPhase = TrafficLightPhase::red;
 
-    std::random_device rd;
-    std::mt19937 eng(rd());
-    std::uniform_int_distribution<> distr(0, 10 - 1);
-    int thing = distr(eng);
+//     std::random_device rd;
+//     std::mt19937 eng(rd());
+//     std::uniform_int_distribution<> distr(0, 10 - 1);
+//     int thing = distr(eng);
+  
 }
 
 void TrafficLight::waitForGreen()
@@ -65,7 +73,8 @@ void TrafficLight::cycleThroughPhases()
 
 	float waitTime = returnRandomWaitTime();
     float accumulatedTime = 0.0;
-  	
+  	queue = std::make_shared<MessageQueue<TrafficLightPhase>>();
+  
   	// while (true) {
     // 	std::this_thread::sleep_for(std::chrono::milliseconds(1));
     //   	--waitTime;
@@ -88,6 +97,10 @@ void TrafficLight::cycleThroughPhases()
         accumulatedTime += timeSinceLastUpdate;
         if (accumulatedTime >= waitTime) {
             toggleTrafficLightPhase(_currentPhase);
+//             queue->send(std::move(_currentPhase));    //TODO: this should cause a segmentation fault
+          	TrafficLightPhase currentPhase = _currentPhase;
+            queue->send(std::move(currentPhase));
+          
             waitTime = returnRandomWaitTime();
             //TODO: still need to send update method to message queue
         }

@@ -55,7 +55,6 @@ public:
     void simulate();
     TrafficLightPhase getCurrentPhase();// {return _currentPhase;}
 
-
 private:
     // typical behaviour methods
     void cycleThroughPhases();
@@ -64,6 +63,7 @@ private:
     // FP.4b : create a private member of type MessageQueue for messages of type TrafficLightPhase 
     // and use it within the infinite loop to push each new TrafficLightPhase into it by calling 
     // send in conjunction with move semantics.
+    std::shared_ptr<MessageQueue<TrafficLightPhase>> queue;
 
     std::condition_variable _condition;
     std::mutex _mutex;
