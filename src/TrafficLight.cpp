@@ -12,12 +12,12 @@ T MessageQueue<T>::receive()
     // to wait for and receive new messages and pull them from the queue using move semantics. 
     // The received object should then be returned by the receive function. 
   	std::unique_lock<std::mutex> uLock(_mutex);
-	_cond.wait(uLock, [this] { return !_queue.empty(); });  //TODO: use _queue here?
+    _cond.wait(uLock, [this] { return !_queue.empty(); });
   
   	T msg = std::move(_queue.back());
-  	_queue.pop_back();		//TODO: use _queue here?
+  	_queue.pop_back();
   
-  	 return msg;  
+  	return msg;  
 }
 
 
@@ -30,9 +30,16 @@ void MessageQueue<T>::send(T &&msg)
     // perform vector modification under the lock
     std::lock_guard<std::mutex> uLock(_mutex);
   
-  	std::cout << "   Message " << msg << " has been sent to the queue" << std::endl;
+  	// std::cout << "   Traffic Light Message " << msg << " has been sent to the queue" << std::endl;
   	_queue.push_back(std::move(msg));
   	_cond.notify_one(); 	
+}
+
+template <typename T>
+void MessageQueue<T>::clearQueue()
+{
+    std::lock_guard<std::mutex> uLock(_mutex);
+    _queue.clear();
 }
 
 
@@ -41,13 +48,7 @@ void MessageQueue<T>::send(T &&msg)
  
 TrafficLight::TrafficLight()
 {
-    _currentPhase = TrafficLightPhase::red;
-
-//     std::random_device rd;
-//     std::mt19937 eng(rd());
-//     std::uniform_int_distribution<> distr(0, 10 - 1);
-//     int thing = distr(eng);
-  
+    _currentPhase = TrafficLightPhase::red; 
 }
 
 void TrafficLight::waitForGreen()
@@ -55,6 +56,7 @@ void TrafficLight::waitForGreen()
     // FP.5b : add the implementation of the method waitForGreen, in which an infinite while-loop 
     // runs and repeatedly calls the receive function on the message queue. 
     // Once it receives TrafficLightPhase::green, the method returns.
+    queue->clearQueue();
     while(true) {
       TrafficLightPhase message = queue->receive();
       if (message == TrafficLightPhase::green) return;
@@ -82,20 +84,8 @@ void TrafficLight::cycleThroughPhases()
     // to the message queue using move semantics. The cycle duration should be a random value between 4 and 6 seconds. 
     // Also, the while-loop should use std::this_thread::sleep_for to wait 1ms between two cycles. 
 
-	float waitTime = returnRandomWaitTime();
-    float accumulatedTime = 0.0;
+	  long waitTime = returnRandomWaitTime();
   	queue = std::make_shared<MessageQueue<TrafficLightPhase>>();
-  
-  	// while (true) {
-    // 	std::this_thread::sleep_for(std::chrono::milliseconds(1));
-    //   	--waitTime;
-    //   	if (waitTime<= 0) {
-    //       	toggleTrafficLightPhase(_currentPhase);
-    //     	waitTime = returnRandomWaitTime();
-    //       //TODO: still need to send update method to message queue
-    //       //TODO: update so this matches vehicle's implementation in drive()
-    //     }
-    // }
 
     // init stop watch
     std::chrono::time_point<std::chrono::system_clock> lastUpdate;
@@ -105,20 +95,19 @@ void TrafficLight::cycleThroughPhases()
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
          // compute time difference to stop watch
         long timeSinceLastUpdate = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - lastUpdate).count();
-        accumulatedTime += timeSinceLastUpdate;
-        if (accumulatedTime >= waitTime) {
+        if (timeSinceLastUpdate >= waitTime) {
             toggleTrafficLightPhase(_currentPhase);
-//             queue->send(std::move(_currentPhase));    //TODO: this should cause a segmentation fault
-          	TrafficLightPhase currentPhase = _currentPhase;
-            queue->send(std::move(currentPhase));
-          
+            queue->send(std::move(_currentPhase));
+
+            // reset wait time / last update
             waitTime = returnRandomWaitTime();
-            //TODO: still need to send update method to message queue
+            lastUpdate = std::chrono::system_clock::now();
         }
     }
 }
 
-float TrafficLight::returnRandomWaitTime()
+// returns a random time between 4000 and 6000 milliseconds
+long TrafficLight::returnRandomWaitTime()
 {
     std::random_device rd;
     std::mt19937 eng(rd());
@@ -127,6 +116,7 @@ float TrafficLight::returnRandomWaitTime()
     return 1000 * (4 + float(distr(eng))/(float(range/2)));
 }
 
+// toggles between green and red
 void TrafficLight::toggleTrafficLightPhase(TrafficLight::TrafficLightPhase currentPhase)
 {
     _currentPhase = currentPhase == TrafficLightPhase::red ? TrafficLightPhase::green : TrafficLightPhase::red;

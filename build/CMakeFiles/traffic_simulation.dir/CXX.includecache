@@ -47,6 +47,8 @@ Intersection.h
 /home/workspace/Concurrent-Traffic-Simulation/src/Intersection.h
 Vehicle.h
 /home/workspace/Concurrent-Traffic-Simulation/src/Vehicle.h
+TrafficLight.h
+/home/workspace/Concurrent-Traffic-Simulation/src/TrafficLight.h
 
 /home/workspace/Concurrent-Traffic-Simulation/src/Intersection.h
 vector
@@ -75,6 +77,14 @@ Street.h
 /home/workspace/Concurrent-Traffic-Simulation/src/Street.h
 TrafficObject.h
 /home/workspace/Concurrent-Traffic-Simulation/src/TrafficObject.h
+
+/home/workspace/Concurrent-Traffic-Simulation/src/TrafficLight.cpp
+iostream
+-
+random
+-
+TrafficLight.h
+/home/workspace/Concurrent-Traffic-Simulation/src/TrafficLight.h
 
 /home/workspace/Concurrent-Traffic-Simulation/src/TrafficLight.h
 mutex
